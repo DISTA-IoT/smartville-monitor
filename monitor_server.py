@@ -164,9 +164,9 @@ async def api_config_prometheus(cfg: dict):
     if not prometheus_running:
         config_prometheus_response = config_prometheus(cfg)
         if config_prometheus_response.status_code == 200:
-        return start_prometheus()
+            return start_prometheus()
         else:
-        return config_prometheus_response
+            return config_prometheus_response
     
     return JSONResponse(
         content={"msg": f"Prometheus is already running (PID={pid})"},
@@ -179,9 +179,9 @@ async def api_config_grafana(cfg: dict):
     if not grafana_running:
         config_grafana_response = config_grafana(cfg)
         if config_grafana_response.status_code == 200:
-        return start_grafana()
+            return start_grafana()
         else:
-        return config_grafana_response
+            return config_grafana_response
     
     return JSONResponse(
         content={"msg": f"Grafana is already running (PID={pid})"},
