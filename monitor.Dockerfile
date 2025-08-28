@@ -46,11 +46,11 @@ RUN rm -rf prometheus-2.34.0.linux-amd64.tar.gz prometheus-2.34.0.linux-amd64
 RUN rm -rf kafka_2.13-3.6.1.tgz
 
 
-COPY  prometheus_grafana_datasource.yaml /usr/share/grafana/conf/provisioning/datasources
-
-# RUN git clone https://github.com/DISTA-IoT/smartville-monitor.git /monitor
+RUN git clone https://github.com/DISTA-IoT/smartville-monitor.git /monitor
 
 WORKDIR /monitor
+
+COPY  prometheus_grafana_datasource.yaml /usr/share/grafana/conf/provisioning/datasources
 
 RUN pip install -r requirements.txt
 
