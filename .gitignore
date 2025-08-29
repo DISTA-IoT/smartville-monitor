@@ -1,5 +1,7 @@
 __pycache__
 PrometheusLogs
+# automatically generated files
+datasources.yaml
 #kafka_server.properties
 #prometheus.yml
 #zookeeper.properties
