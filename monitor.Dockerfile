@@ -50,8 +50,6 @@ RUN git clone https://github.com/DISTA-IoT/smartville-monitor.git /monitor
 
 WORKDIR /monitor
 
-COPY  prometheus_grafana_datasource.yaml /usr/share/grafana/conf/provisioning/datasources
-
 RUN pip install -r requirements.txt
 
 
