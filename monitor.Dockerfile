@@ -45,7 +45,7 @@ ENV PATH="/opt/kafka/bin:${PATH}"
 RUN rm -rf prometheus-2.34.0.linux-amd64.tar.gz prometheus-2.34.0.linux-amd64
 RUN rm -rf kafka_2.13-3.6.1.tgz
 
-
+ARG CACHE_BUST=1
 RUN git clone https://github.com/DISTA-IoT/smartville-monitor.git /monitor
 
 WORKDIR /monitor
