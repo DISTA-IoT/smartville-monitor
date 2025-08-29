@@ -229,6 +229,13 @@ def config_grafana(config_payload: Dict[str, Any]):
     LAST_CONFIG = cfg
     logger.info(f"Grafana datasource configuration written to {GRAFANA_DATASOURCE_PATH}")
     response_content = {"msg": f"Config written to {GRAFANA_DATASOURCE_PATH}"}
+
+
+    # Write also a copu of this file in the current working directory:
+    with open("datasources.yaml", "w") as f:
+        yaml.safe_dump(yaml_dict, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+    logger.warning(f"Datasource configuration COPY written to current working directory for reference purposes only")
+
     return JSONResponse(content=response_content, status_code=200)
 
 
