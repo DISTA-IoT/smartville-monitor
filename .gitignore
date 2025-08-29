@@ -1,1 +1,6 @@
 __pycache__
+PrometheusLogs
+#kafka_server.properties
+#prometheus.yml
+#zookeeper.properties
+#datasources.yaml
