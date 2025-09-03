@@ -50,6 +50,7 @@ RUN git clone https://github.com/DISTA-IoT/smartville-monitor.git /monitor
 
 WORKDIR /monitor
 
-RUN pip install -r requirements.txt
+RUN pip install uv
 
+RUN uv  pip sync --system requirements.txt
 
