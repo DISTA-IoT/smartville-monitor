@@ -53,6 +53,7 @@ import atexit
 import signal
 from threading import Lock
 import logging 
+import netifaces as ni
 
 
 SUPPRESSED_ENDPOINTS = [
@@ -81,6 +82,13 @@ uvicorn_access_logger.name = "MonitorServer"
 
 logger = logging.getLogger("monitor_server")
 logger.name = "MonitorServer"
+
+def get_static_source_ip_address(interface='eth0'):
+    try:
+        ip = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
+        return ip
+    except ValueError:
+        return "Interface not found"
 
 
 app = FastAPI(title="Monitor Server API", description="API for node health monitoring")  # FastAPI app instance
@@ -232,6 +240,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, handle_sigterm)
     signal.signal(signal.SIGINT, handle_sigterm)
 
+    os.environ['no_proxy'] = os.environ['no_proxy']+','+get_static_source_ip_address()
     try:
         port = int(os.environ.get("SERVER_PORT"))
     except Exception as e:
