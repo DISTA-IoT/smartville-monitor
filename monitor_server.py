@@ -136,6 +136,12 @@ def handle_sigterm(signum, frame):
     os._exit(0)  # Force exit
 
 
+def fix_no_proxy():
+    no_proxy = os.environ.get('no_proxy', '')
+    if no_proxy != '':
+        no_proxy += ','
+    os.environ['no_proxy'] = no_proxy + get_static_source_ip_address()
+
 @app.post("/start_zookeeper")
 async def api_start_zookeeper(cfg: dict):
     zookeeper_running, pid, last_exit_status = check_zookeeper()
@@ -240,7 +246,8 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, handle_sigterm)
     signal.signal(signal.SIGINT, handle_sigterm)
 
-    os.environ['no_proxy'] = os.environ['no_proxy']+','+get_static_source_ip_address()
+    fix_no_proxy()
+    
     try:
         port = int(os.environ.get("SERVER_PORT"))
     except Exception as e:
