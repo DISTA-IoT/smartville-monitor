@@ -7,6 +7,7 @@ import threading
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field, validator
 from fastapi.responses import JSONResponse
+import netifaces as ni
 
 logger = logging.getLogger("grafana-manager")
 
@@ -18,6 +19,14 @@ GRAFANA_THREAD: Optional[threading.Thread] = None
 GRAFANA_LOCK = threading.Lock()
 LAST_CONFIG: Optional["GrafanaConfig"] = None  # updated by config_grafana()
 
+
+def get_static_source_ip_address(interface='eth0'):
+    try:
+        ip = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
+        return ip
+    except ValueError:
+        return "Interface not found"
+    
 
 class DataSource(BaseModel):
     """Individual datasource configuration."""
@@ -251,8 +260,15 @@ def start_grafana():
 
         home_path = (LAST_CONFIG.home_path if LAST_CONFIG else GRAFANA_HOME_PATH)
         
-        # Ensure home path exists
+        env = os.environ.copy()
         try:
+            no_proxy = env.get("no_proxy", "")
+            if no_proxy != "":
+                no_proxy += ","
+            no_proxy += get_static_source_ip_address()
+            env["no_proxy"] = no_proxy
+            logger.info(f"Launching Grafana with no_proxy={no_proxy}")
+            
             if not os.path.exists(home_path):
                 logger.error(f"Grafana home path does not exist: {home_path}")
                 response_content = {"msg": f"Grafana home path does not exist: {home_path}"}
@@ -269,7 +285,7 @@ def start_grafana():
                 home_path
             ]
             logger.info("Starting Grafana: %s", " ".join(cmd))
-            GRAFANA_PROCESS = subprocess.Popen(cmd)
+            GRAFANA_PROCESS = subprocess.Popen(cmd, env=env)
             rc = GRAFANA_PROCESS.wait()
             logger.info("Grafana process ended with code %s.", rc)
 

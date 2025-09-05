@@ -47,14 +47,12 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 import uvicorn
-import threading
 import os
 import atexit
 import signal
 from threading import Lock
 import logging 
-import netifaces as ni
-
+import time
 
 SUPPRESSED_ENDPOINTS = [
    '/check_zookeeper', 
@@ -63,14 +61,6 @@ SUPPRESSED_ENDPOINTS = [
    '/check_grafana',
    '/metrics'
  ]
-
-
-def get_static_source_ip_address(interface='eth0'):
-    try:
-        ip = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
-        return ip
-    except ValueError:
-        return "Interface not found"
     
 
 class SuppressEndpointFilter(logging.Filter):
@@ -117,22 +107,6 @@ def pprint(obj):
         else:
           logger.debug(f"{key}: {value}")
 
-
-def fix_no_proxy():
-    no_proxy = os.environ.get('no_proxy', '')
-    if no_proxy != '':
-        no_proxy += ','
-
-    while True:
-        try:
-            no_proxy += get_static_source_ip_address()
-            break
-        except ValueError:
-            logger.error(f"Interface not found...")
-    
-    os.environ['no_proxy'] = no_proxy + get_static_source_ip_address()
-    logger.warning(f"no_proxy: {no_proxy}")
-
     
 @app.get("/")
 async def root():
@@ -156,7 +130,6 @@ def handle_sigterm(signum, frame):
 
 @app.post("/start_zookeeper")
 async def api_start_zookeeper(cfg: dict):
-    fix_no_proxy()
     zookeeper_running, pid, last_exit_status = check_zookeeper()
     if not zookeeper_running:
         config_zookeeper_response = config_zookeeper(cfg)
