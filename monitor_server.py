@@ -64,6 +64,15 @@ SUPPRESSED_ENDPOINTS = [
    '/metrics'
  ]
 
+
+def get_static_source_ip_address(interface='eth0'):
+    try:
+        ip = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
+        return ip
+    except ValueError:
+        return "Interface not found"
+    
+
 class SuppressEndpointFilter(logging.Filter):
     def filter(self, record):
         # Check if the log record has the necessary arguments (for Uvicorn access logs)
@@ -82,13 +91,6 @@ uvicorn_access_logger.name = "MonitorServer"
 
 logger = logging.getLogger("monitor_server")
 logger.name = "MonitorServer"
-
-def get_static_source_ip_address(interface='eth0'):
-    try:
-        ip = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
-        return ip
-    except ValueError:
-        return "Interface not found"
 
 
 app = FastAPI(title="Monitor Server API", description="API for node health monitoring")  # FastAPI app instance
@@ -116,6 +118,22 @@ def pprint(obj):
           logger.debug(f"{key}: {value}")
 
 
+def fix_no_proxy():
+    no_proxy = os.environ.get('no_proxy', '')
+    if no_proxy != '':
+        no_proxy += ','
+
+    while True:
+        try:
+            no_proxy += get_static_source_ip_address()
+            break
+        except ValueError:
+            logger.error(f"Interface not found...")
+    
+    os.environ['no_proxy'] = no_proxy + get_static_source_ip_address()
+    logger.warning(f"no_proxy: {no_proxy}")
+
+    
 @app.get("/")
 async def root():
     logger.info("Root endpoint called")
@@ -136,24 +154,9 @@ def handle_sigterm(signum, frame):
     os._exit(0)  # Force exit
 
 
-def fix_no_proxy():
-    no_proxy = os.environ.get('no_proxy', '')
-    if no_proxy != '':
-        no_proxy += ','
-
-    while True:
-        try:
-            no_proxy += get_static_source_ip_address()
-            break
-        except ValueError:
-            print(f"Interface not found...")
-    
-    os.environ['no_proxy'] = no_proxy + get_static_source_ip_address()
-    print(f"no_proxy: {no_proxy}")
-
-
 @app.post("/start_zookeeper")
 async def api_start_zookeeper(cfg: dict):
+    fix_no_proxy()
     zookeeper_running, pid, last_exit_status = check_zookeeper()
     if not zookeeper_running:
         config_zookeeper_response = config_zookeeper(cfg)
@@ -255,8 +258,6 @@ if __name__ == "__main__":
     atexit.register(cleanup)
     signal.signal(signal.SIGTERM, handle_sigterm)
     signal.signal(signal.SIGINT, handle_sigterm)
-
-    fix_no_proxy()
     
     try:
         port = int(os.environ.get("SERVER_PORT"))
