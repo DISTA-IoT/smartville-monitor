@@ -140,7 +140,17 @@ def fix_no_proxy():
     no_proxy = os.environ.get('no_proxy', '')
     if no_proxy != '':
         no_proxy += ','
+
+    while True:
+        try:
+            no_proxy += get_static_source_ip_address()
+            break
+        except ValueError:
+            print(f"Interface not found...")
+    
     os.environ['no_proxy'] = no_proxy + get_static_source_ip_address()
+    print(f"no_proxy: {no_proxy}")
+
 
 @app.post("/start_zookeeper")
 async def api_start_zookeeper(cfg: dict):
