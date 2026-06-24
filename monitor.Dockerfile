@@ -7,9 +7,6 @@ RUN apt-get update && \
     net-tools iputils-ping  tcpdump socat && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --upgrade pip
-
-
 # Download and install Prometheus
 RUN wget https://github.com/prometheus/prometheus/releases/download/v2.49.1/prometheus-2.49.1.linux-amd64.tar.gz && \
     tar -xvf prometheus-2.49.1.linux-amd64.tar.gz && \
@@ -39,16 +36,24 @@ EXPOSE 9092
 EXPOSE 3000
 
 # Set environment variables
-ENV PATH="/opt/kafka/bin:${PATH}"
+ENV PATH=/opt/kafka/bin:${PATH}
 
 # Clean up unnecessary files
 RUN rm -rf prometheus-2.34.0.linux-amd64.tar.gz prometheus-2.34.0.linux-amd64
 RUN rm -rf kafka_2.13-3.6.1.tgz
 
+# Full rebuild bust: pass CACHE_BUST=<timestamp> to re-run pip install and code clone
 ARG CACHE_BUST=1
+
+RUN pip3 install --upgrade pip
+
+# Install dependencies from the build context (submodule checkout on disk)
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Code-only bust: pass CODE_BUST=<timestamp> to re-run only the git clone, keeping pip cached
+ARG CODE_BUST=1
+
 RUN git clone https://github.com/DISTA-IoT/smartville-monitor.git /monitor
 
 WORKDIR /monitor
-
-RUN pip install -r requirements.txt
-
